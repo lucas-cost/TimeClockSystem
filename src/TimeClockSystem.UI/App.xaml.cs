@@ -40,6 +40,8 @@ namespace TimeClockSystem.UI
             // Infrastructure
             services.AddAutoMapper(typeof(MappingProfile).Assembly);
             services.AddHttpClient<IApiClient, ApiClient>().AddPolicyHandler(GetRetryPolicy());
+            // UI
+            services.AddSingleton<MainWindow>();
         }
 
         private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
@@ -50,5 +52,11 @@ namespace TimeClockSystem.UI
                 .OrResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
                 .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
         }
+        protected override async void OnExit(ExitEventArgs e)
+        {
+            await _host.StopAsync();
+            _host.Dispose();
+            base.OnExit(e);
     }
+}
 }
