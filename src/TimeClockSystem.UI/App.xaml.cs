@@ -4,9 +4,11 @@ using Microsoft.Extensions.Hosting;
 using Polly;
 using System.IO;
 using System.Net.Http;
+using TimeClockSystem.Application.UseCases.RegisterPoint;
 using TimeClockSystem.Core.Interfaces;
 using TimeClockSystem.Core.Settings;
 using TimeClockSystem.Infrastructure.Api;
+using TimeClockSystem.UI.ViewModels;
 using WpfApplication = System.Windows.Application;
 
 namespace TimeClockSystem.UI
@@ -40,7 +42,12 @@ namespace TimeClockSystem.UI
             // Infrastructure
             services.AddAutoMapper(typeof(MappingProfile).Assembly);
             services.AddHttpClient<IApiClient, ApiClient>().AddPolicyHandler(GetRetryPolicy());
+
+            // Application
+            services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(RegisterPointCommand).Assembly));
+
             // UI
+            services.AddSingleton<MainViewModel>();
             services.AddSingleton<MainWindow>();
         }
 
