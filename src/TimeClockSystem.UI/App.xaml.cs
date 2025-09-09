@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.Windows;
 using TimeClockSystem.Application.UseCases.RegisterPoint;
 using TimeClockSystem.Core.Interfaces;
+using TimeClockSystem.Core.Services;
 using TimeClockSystem.Core.Settings;
 using TimeClockSystem.Infrastructure.Api;
 using TimeClockSystem.Infrastructure.Data.Context;
@@ -51,8 +52,12 @@ namespace TimeClockSystem.UI
                 options.UseSqlite($"Data Source={dbPath}");
             });
 
+            // Core
+            services.AddScoped<TimeClockService>();
+
             // Infrastructure
             services.AddAutoMapper(typeof(MappingProfile).Assembly);
+            services.AddScoped<ITimeClockRepository, TimeClockRepository>();
             services.AddHttpClient<IApiClient, ApiClient>().AddPolicyHandler(GetRetryPolicy());
 
             // Application
