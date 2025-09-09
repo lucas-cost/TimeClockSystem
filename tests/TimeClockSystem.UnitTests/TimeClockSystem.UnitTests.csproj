@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\TimeClockSystem.BackgroundServices\TimeClockSystem.BackgroundServices.csproj" />
     <ProjectReference Include="..\..\src\TimeClockSystem.Core\TimeClockSystem.Core.csproj" />
     <ProjectReference Include="..\..\src\TimeClockSystem.Infrastructure\TimeClockSystem.Infrastructure.csproj" />
   </ItemGroup>
