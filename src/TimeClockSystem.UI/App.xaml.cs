@@ -7,11 +7,13 @@ using System.IO;
 using System.Net.Http;
 using System.Windows;
 using TimeClockSystem.Application.UseCases.RegisterPoint;
+using TimeClockSystem.BackgroundServices;
 using TimeClockSystem.Core.Interfaces;
 using TimeClockSystem.Core.Services;
 using TimeClockSystem.Core.Settings;
 using TimeClockSystem.Infrastructure.Api;
 using TimeClockSystem.Infrastructure.Data.Context;
+using TimeClockSystem.Infrastructure.Repositories;
 using TimeClockSystem.UI.ViewModels;
 using WpfApplication = System.Windows.Application;
 
@@ -66,6 +68,9 @@ namespace TimeClockSystem.UI
             // UI
             services.AddSingleton<MainViewModel>();
             services.AddSingleton<MainWindow>();
+
+            // Background Services
+            services.AddHostedService<SyncWorker>();
         }
 
         private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
@@ -81,6 +86,9 @@ namespace TimeClockSystem.UI
          {
             try
             {
+                await _host.StartAsync(); //inicio da sincronização
+
+                // Aplica as migrations do EF Core ao iniciar, se necessário
                 using (var scope = _host.Services.CreateScope()) 
                 {
                     TimeClockDbContext dbContext = scope.ServiceProvider.GetRequiredService<TimeClockDbContext>();
