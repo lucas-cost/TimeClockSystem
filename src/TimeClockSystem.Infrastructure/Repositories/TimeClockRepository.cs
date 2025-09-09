@@ -21,14 +21,6 @@ namespace TimeClockSystem.Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<TimeClockRecord?> GetLastRecordForEmployeeAsync(string employeeId)
-        {
-            return await _context.TimeClockRecords
-                .Where(r => r.EmployeeId == employeeId)
-                .OrderByDescending(r => r.Timestamp)
-                .FirstOrDefaultAsync();
-        }
-
         public async Task<IEnumerable<TimeClockRecord>> GetPendingSyncRecordsAsync()
         {
             return await _context.TimeClockRecords
@@ -45,6 +37,15 @@ namespace TimeClockSystem.Infrastructure.Repositories
                 record.Status = newStatus;
                 await _context.SaveChangesAsync();
             }
+        }
+
+        public async Task<List<TimeClockRecord>> GetTodaysRecordsForEmployeeAsync(string employeeId)
+        {
+            var today = DateTime.Now.Date;
+            return await _context.TimeClockRecords
+                .Where(r => r.EmployeeId == employeeId && r.Timestamp.Date == today)
+                .OrderBy(r => r.Timestamp)
+                .ToListAsync();
         }
     }
 }
