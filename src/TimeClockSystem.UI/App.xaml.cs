@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Polly;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Windows;
@@ -23,12 +24,9 @@ using WpfApplication = System.Windows.Application;
 
 namespace TimeClockSystem.UI
 {
-    /// <summary>
-    /// Interaction logic for App.xaml
-    /// </summary>
     public partial class App : WpfApplication
     {
-        private IHost _host;
+        private readonly IHost _host;
 
         public App()
         {
@@ -42,15 +40,15 @@ namespace TimeClockSystem.UI
 
         private void ConfigureServices(IServiceCollection services)
         {
-            var configuration = new ConfigurationBuilder()
-                    .SetBasePath(Directory.GetCurrentDirectory())
-                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                    .Build();
+            IConfigurationRoot configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .Build();
 
             services.Configure<ApiSettings>(configuration.GetSection("ApiSettings"));
 
             // Database
-            services.AddDbContext<TimeClockDbContext>(options => 
+            services.AddDbContext<TimeClockDbContext>(options =>
             {
                 string dbPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "TimeClockSystem", "timeclock.db");
                 Directory.CreateDirectory(Path.GetDirectoryName(dbPath)!);
@@ -66,14 +64,19 @@ namespace TimeClockSystem.UI
             services.AddSingleton<IWebcamFactory, WebcamFactory>();
             services.AddSingleton<IWebcamService>(provider =>
             {
-                // 1. Pega a factory que acabamos de registrar
-                var factory = provider.GetRequiredService<IWebcamFactory>();
-                // 2. A factory tenta criar o dispositivo de captura
+                IWebcamFactory factory = provider.GetRequiredService<IWebcamFactory>();
                 IVideoCaptureWrapper? captureDevice = factory.CreateVideoCapture();
-                // 3. Cria a WebcamService, passando o dispositivo (que pode ser nulo)
                 return new WebcamService(captureDevice);
             });
-            services.AddHttpClient<IApiClient, ApiClient>().AddPolicyHandler(GetRetryPolicy());
+
+            IAsyncPolicy<HttpResponseMessage> retryPolicy = GetRetryPolicy();
+            IAsyncPolicy<HttpResponseMessage> circuitBreakerPolicy = GetCircuitBreakerPolicy();
+
+            // Combina as políticas na ordem correta, com o Circuit Breaker envolvendo o Retry.
+            IAsyncPolicy<HttpResponseMessage> combinedPolicy = Policy.WrapAsync(circuitBreakerPolicy, retryPolicy);
+
+            services.AddHttpClient<IApiClient, ApiClient>()
+                .AddPolicyHandler(combinedPolicy);
 
             // Application
             services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(RegisterPointCommand).Assembly));
@@ -88,21 +91,53 @@ namespace TimeClockSystem.UI
 
         private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
         {
-            // Política de Retry com backoff exponencial: 3 tentativas com 2, 4, 8 segundos de espera.
             return Policy
                 .Handle<HttpRequestException>()
                 .OrResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
-                .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
+                .WaitAndRetryAsync(3, retryAttempt =>
+                {
+                    TimeSpan delay = TimeSpan.FromSeconds(Math.Pow(2, retryAttempt));
+                    Debug.WriteLine($"RETRY: Tentativa {retryAttempt}. Aguardando {delay.TotalSeconds}s...");
+                    return delay;
+                });
+        }
+
+        private static IAsyncPolicy<HttpResponseMessage> GetCircuitBreakerPolicy()
+        {
+            return Policy
+                .Handle<HttpRequestException>()
+                .OrResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
+                .CircuitBreakerAsync(
+                    5,
+                    TimeSpan.FromSeconds(30),
+                    OnBreak,
+                    OnReset,
+                    OnHalfOpen
+                );
+        }
+
+        private static void OnBreak(DelegateResult<HttpResponseMessage> result, TimeSpan timeSpan)
+        {
+            Debug.WriteLine($"CIRCUIT BREAKER: Circuito aberto por 30 segundos. Motivo: {result.Exception?.Message ?? result.Result?.ReasonPhrase}");
+        }
+
+        private static void OnReset()
+        {
+            Debug.WriteLine("CIRCUIT BREAKER: Circuito fechado. As chamadas voltam ao normal.");
+        }
+
+        private static void OnHalfOpen()
+        {
+            Debug.WriteLine("CIRCUIT BREAKER: Circuito meio-aberto. A próxima chamada será um teste.");
         }
 
         protected override async void OnStartup(StartupEventArgs e)
         {
             try
             {
-                await _host.StartAsync(); //inicio da sincronização
+                await _host.StartAsync();
 
-                // Aplica as migrations do EF Core ao iniciar, se necessário
-                using (var scope = _host.Services.CreateScope()) 
+                using (IServiceScope scope = _host.Services.CreateScope())
                 {
                     TimeClockDbContext dbContext = scope.ServiceProvider.GetRequiredService<TimeClockDbContext>();
                     await dbContext.Database.MigrateAsync();
@@ -117,8 +152,7 @@ namespace TimeClockSystem.UI
                                 "Erro de Inicialização",
                                 MessageBoxButton.OK,
                                 MessageBoxImage.Error);
-
-                this.Shutdown();
+                Shutdown();
             }
         }
 
