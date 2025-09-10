@@ -13,18 +13,18 @@ namespace TimeClockSystem.Application.UseCases.RegisterPoint
         private readonly ITimeClockRepository _repository;
         private readonly IApiClient _apiClient;
         private readonly IWebcamService _webcamService;
-        private readonly TimeClockService _timeClockService;
+        private readonly ITimeClockService _timeClockService;
 
         public RegisterPointCommandHandler(
             ITimeClockRepository repository,
             IApiClient apiClient,
             IWebcamService webcamService,
-            TimeClockService timeClockService)
+            ITimeClockService timeClockService)
         {
             _repository = repository;
             _apiClient = apiClient;
             _webcamService = webcamService;
-            _timeClockService = timeClockService;
+            _timeClockService = timeClockService; 
         }
 
         public async Task<RegisterPointResult> Handle(RegisterPointCommand request, CancellationToken cancellationToken)

@@ -5,7 +5,7 @@ using TimeClockSystem.Core.Interfaces;
 
 namespace TimeClockSystem.Core.Services
 {
-    public class TimeClockService
+    public class TimeClockService : ITimeClockService
     {
         private readonly ITimeClockRepository _repository;
         private const double MinWorkHoursForExit = 8.0;

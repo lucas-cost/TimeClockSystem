@@ -58,7 +58,7 @@ namespace TimeClockSystem.UI
             });
 
             // Core
-            services.AddScoped<TimeClockService>();
+            services.AddScoped<ITimeClockService, TimeClockService>();
 
             // Infrastructure
             services.AddAutoMapper(typeof(MappingProfile).Assembly);
