@@ -15,6 +15,8 @@ using TimeClockSystem.Core.Settings;
 using TimeClockSystem.Infrastructure.Api;
 using TimeClockSystem.Infrastructure.Data.Context;
 using TimeClockSystem.Infrastructure.Hardware;
+using TimeClockSystem.Infrastructure.Hardware.Abstractions;
+using TimeClockSystem.Infrastructure.Hardware.Factories;
 using TimeClockSystem.Infrastructure.Repositories;
 using TimeClockSystem.UI.ViewModels;
 using WpfApplication = System.Windows.Application;
@@ -61,7 +63,16 @@ namespace TimeClockSystem.UI
             // Infrastructure
             services.AddAutoMapper(typeof(MappingProfile).Assembly);
             services.AddScoped<ITimeClockRepository, TimeClockRepository>();
-            services.AddSingleton<IWebcamService, WebcamService>();
+            services.AddSingleton<IWebcamFactory, WebcamFactory>();
+            services.AddSingleton<IWebcamService>(provider =>
+            {
+                // 1. Pega a factory que acabamos de registrar
+                var factory = provider.GetRequiredService<IWebcamFactory>();
+                // 2. A factory tenta criar o dispositivo de captura
+                IVideoCaptureWrapper? captureDevice = factory.CreateVideoCapture();
+                // 3. Cria a WebcamService, passando o dispositivo (que pode ser nulo)
+                return new WebcamService(captureDevice);
+            });
             services.AddHttpClient<IApiClient, ApiClient>().AddPolicyHandler(GetRetryPolicy());
 
             // Application

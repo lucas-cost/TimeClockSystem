@@ -1,51 +1,20 @@
 ﻿using OpenCvSharp;
-using System.Diagnostics;
 using TimeClockSystem.Application.Interfaces;
+using TimeClockSystem.Infrastructure.Hardware.Abstractions;
 
 namespace TimeClockSystem.Infrastructure.Hardware
 {
     public class WebcamService : IWebcamService, IDisposable
     {
-        private VideoCapture? _capture;
+        private readonly IVideoCaptureWrapper? _capture;
         private CancellationTokenSource? _cancellationTokenSource;
         private Task? _captureTask;
 
         public event Action<byte[]>? FrameReady;
 
-        public WebcamService()
+        public WebcamService(IVideoCaptureWrapper? capture)
         {
-            int cameraIndex = -1;
-
-            // Tenta encontrar uma câmera funcional nos índices de 0 a 9, medida realizada porque eu virtualizo a camera do meu celular como webcam usando o Iriun
-            for (int i = 0; i < 10; i++)
-            {
-                try
-                {
-                    VideoCapture testCapture = new(i);
-                    if (testCapture.IsOpened())
-                    {
-                        Debug.WriteLine($"Câmera encontrada e funcionando no índice: {i}");
-                        cameraIndex = i;
-                        testCapture.Dispose();
-                        break;
-                    }
-                    testCapture.Dispose();
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"Erro ao testar câmera no índice {i}: {ex.Message}");
-                }
-            }
-
-            if (cameraIndex != -1)
-            {
-                _capture = new VideoCapture(cameraIndex);
-            }
-            else
-            {
-                Debug.WriteLine("Nenhuma câmera funcional foi encontrada.");
-                _capture = null;
-            }
+            _capture = capture;
         }
 
         public bool IsWebcamAvailable() => _capture?.IsOpened() ?? false;
@@ -86,11 +55,14 @@ namespace TimeClockSystem.Infrastructure.Hardware
 
         public string CaptureAndSaveImage(string employeeId)
         {
-            if (!IsWebcamAvailable()) throw new InvalidOperationException("Webcam não disponível.");
+            if (!IsWebcamAvailable() || _capture == null)
+                throw new InvalidOperationException("Webcam não disponível para captura de imagem.");
+
             using (var frame = new Mat())
             {
                 _capture.Read(frame);
-                if (frame.Empty()) throw new InvalidOperationException("Falha ao capturar frame.");
+                if (frame.Empty())
+                    throw new InvalidOperationException("Falha ao capturar frame da webcam.");
 
                 string tempPath = Path.GetTempPath();
                 string fileName = $"ponto_{employeeId}_{DateTime.Now:yyyyMMddHHmmss}.jpg";
