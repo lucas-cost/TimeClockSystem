@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using TimeClockSystem.Application.Interfaces;
 using TimeClockSystem.Core.Entities;
 using TimeClockSystem.Core.Enums;
 using TimeClockSystem.Core.Exceptions;
@@ -11,15 +12,18 @@ namespace TimeClockSystem.Application.UseCases.RegisterPoint
     {
         private readonly ITimeClockRepository _repository;
         private readonly IApiClient _apiClient;
+        private readonly IWebcamService _webcamService;
         private readonly TimeClockService _timeClockService;
 
         public RegisterPointCommandHandler(
             ITimeClockRepository repository,
             IApiClient apiClient,
+            IWebcamService webcamService,
             TimeClockService timeClockService)
         {
             _repository = repository;
             _apiClient = apiClient;
+            _webcamService = webcamService;
             _timeClockService = timeClockService;
         }
 
@@ -29,6 +33,8 @@ namespace TimeClockSystem.Application.UseCases.RegisterPoint
             {
                 RecordType recordType = await _timeClockService.GetNextRecordTypeAsync(request.PointData.EmployeeId);
 
+                string photoPath = _webcamService.CaptureAndSaveImage(request.PointData.EmployeeId);
+
                 TimeClockRecord record = new TimeClockRecord
                 {
                     Id = Guid.NewGuid(),
@@ -36,7 +42,7 @@ namespace TimeClockSystem.Application.UseCases.RegisterPoint
                     Timestamp = DateTime.Now,
                     Type = recordType,
                     Location = "Escritório Principal (Simulado)",
-                    PhotoPath = "C://users/lucas",
+                    PhotoPath = photoPath,
                     Status = SyncStatus.Pending
                 };
 
@@ -45,10 +51,8 @@ namespace TimeClockSystem.Application.UseCases.RegisterPoint
                 bool synced = await _apiClient.RegisterPointAsync(record);
 
                 if (synced)
-                {
                     await _repository.UpdateStatusAsync(record.Id, SyncStatus.Synced);
-                }
-
+                
                 return new RegisterPointResult { Success = true, CreatedRecordType = record.Type };
             }
             catch (BusinessRuleException ex)

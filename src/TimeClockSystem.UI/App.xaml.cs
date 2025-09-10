@@ -6,6 +6,7 @@ using Polly;
 using System.IO;
 using System.Net.Http;
 using System.Windows;
+using TimeClockSystem.Application.Interfaces;
 using TimeClockSystem.Application.UseCases.RegisterPoint;
 using TimeClockSystem.BackgroundServices;
 using TimeClockSystem.Core.Interfaces;
@@ -13,6 +14,7 @@ using TimeClockSystem.Core.Services;
 using TimeClockSystem.Core.Settings;
 using TimeClockSystem.Infrastructure.Api;
 using TimeClockSystem.Infrastructure.Data.Context;
+using TimeClockSystem.Infrastructure.Hardware;
 using TimeClockSystem.Infrastructure.Repositories;
 using TimeClockSystem.UI.ViewModels;
 using WpfApplication = System.Windows.Application;
@@ -46,9 +48,8 @@ namespace TimeClockSystem.UI
             services.Configure<ApiSettings>(configuration.GetSection("ApiSettings"));
 
             // Database
-            services.AddDbContext<TimeClockDbContext>(options =>
+            services.AddDbContext<TimeClockDbContext>(options => 
             {
-                // Certifique-se de que a pasta AppData exista ou escolha outro local
                 string dbPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "TimeClockSystem", "timeclock.db");
                 Directory.CreateDirectory(Path.GetDirectoryName(dbPath)!);
                 options.UseSqlite($"Data Source={dbPath}");
@@ -60,6 +61,7 @@ namespace TimeClockSystem.UI
             // Infrastructure
             services.AddAutoMapper(typeof(MappingProfile).Assembly);
             services.AddScoped<ITimeClockRepository, TimeClockRepository>();
+            services.AddSingleton<IWebcamService, WebcamService>();
             services.AddHttpClient<IApiClient, ApiClient>().AddPolicyHandler(GetRetryPolicy());
 
             // Application
@@ -83,7 +85,7 @@ namespace TimeClockSystem.UI
         }
 
         protected override async void OnStartup(StartupEventArgs e)
-         {
+        {
             try
             {
                 await _host.StartAsync(); //inicio da sincronização
