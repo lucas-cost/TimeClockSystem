@@ -53,13 +53,13 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
         public async Task RegisterPointAsync_WhenRequestIsSuccessful_ReturnsTrue()
         {
             // Arrange
-            var record = new TimeClockRecord { Id = new Guid("2d9c32ea-fbf6-40fe-856c-c609aa17c9f3"), EmployeeId = "123", Timestamp = DateTime.Now };
-            var apiDto = new ApiTimeClockRecordDto();
-            var responseDto = new RegisterPointResponseDto { Message = "Point registered successfully" };
+            TimeClockRecord record = new() { Id = new Guid("2d9c32ea-fbf6-40fe-856c-c609aa17c9f3"), EmployeeId = "123", Timestamp = DateTime.Now };
+            ApiTimeClockRecordDto apiDto = new();
+            RegisterPointResponseDto responseDto = new() { Message = "Point registered successfully" };
 
             _mockMapper.Setup(m => m.Map<ApiTimeClockRecordDto>(record)).Returns(apiDto);
 
-            var responseMessage = new HttpResponseMessage(HttpStatusCode.OK)
+            HttpResponseMessage responseMessage = new(HttpStatusCode.OK)
             {
                 Content = new StringContent(JsonConvert.SerializeObject(responseDto), Encoding.UTF8, "application/json")
             };
@@ -70,13 +70,13 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
                     ItExpr.Is<HttpRequestMessage>(req =>
                         req.Method == HttpMethod.Post &&
                         req.RequestUri.ToString().Contains("api/timesheet/register") &&
-                        req.Headers.Authorization.Scheme == "Bearer" &&
+                        req.Headers.Authorization!.Scheme == "Bearer" &&
                         req.Headers.Authorization.Parameter == "test-token"),
                     ItExpr.IsAny<CancellationToken>())
                 .ReturnsAsync(responseMessage);
 
             // Act
-            var result = await _apiClient.RegisterPointAsync(record);
+            bool result = await _apiClient.RegisterPointAsync(record);
 
             // Assert
             Assert.IsTrue(result);
@@ -87,12 +87,12 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
         public async Task RegisterPointAsync_WhenRequestFails_ReturnsFalse()
         {
             // Arrange
-            var record = new TimeClockRecord { Id = new Guid("2d9c32ea-fbf6-40fe-856c-c609aa17c9f3"), EmployeeId = "123", Timestamp = DateTime.Now };
-            var apiDto = new ApiTimeClockRecordDto();
+            TimeClockRecord record = new() { Id = new Guid("2d9c32ea-fbf6-40fe-856c-c609aa17c9f3"), EmployeeId = "123", Timestamp = DateTime.Now };
+            ApiTimeClockRecordDto apiDto = new();
 
             _mockMapper.Setup(m => m.Map<ApiTimeClockRecordDto>(record)).Returns(apiDto);
 
-            var responseMessage = new HttpResponseMessage(HttpStatusCode.BadRequest);
+            HttpResponseMessage responseMessage = new(HttpStatusCode.BadRequest);
 
             _mockHttpMessageHandler.Protected()
                 .Setup<Task<HttpResponseMessage>>(
@@ -102,7 +102,7 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
                 .ReturnsAsync(responseMessage);
 
             // Act
-            var result = await _apiClient.RegisterPointAsync(record);
+            bool result = await _apiClient.RegisterPointAsync(record);
 
             // Assert
             Assert.IsFalse(result);
@@ -112,8 +112,8 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
         public async Task RegisterPointAsync_WhenExceptionOccurs_ReturnsFalse()
         {
             // Arrange
-            var record = new TimeClockRecord { Id = new Guid("2d9c32ea-fbf6-40fe-856c-c609aa17c9f3"), EmployeeId = "123", Timestamp = DateTime.Now };
-            var apiDto = new ApiTimeClockRecordDto();
+            TimeClockRecord record = new() { Id = new Guid("2d9c32ea-fbf6-40fe-856c-c609aa17c9f3"), EmployeeId = "123", Timestamp = DateTime.Now };
+            ApiTimeClockRecordDto apiDto = new();
 
             _mockMapper.Setup(m => m.Map<ApiTimeClockRecordDto>(record)).Returns(apiDto);
 
@@ -125,7 +125,7 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
                 .ThrowsAsync(new HttpRequestException("Network error"));
 
             // Act
-            var result = await _apiClient.RegisterPointAsync(record);
+            bool result = await _apiClient.RegisterPointAsync(record);
 
             // Assert
             Assert.IsFalse(result);
