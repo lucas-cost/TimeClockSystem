@@ -24,16 +24,16 @@
                    Margin="20"/>
 
         <Border Grid.Row="1"
-        Margin="20,0,20,20"
-        BorderBrush="Gray"
-        BorderThickness="1"
-        CornerRadius="5"
-        Background="#F0F0F0">
+                Margin="20,0,20,20"
+                BorderBrush="Gray"
+                BorderThickness="1"
+                CornerRadius="5"
+                Background="#F0F0F0">
 
             <Grid>
                 <Viewbox Stretch="Uniform">
                     <Image Source="{Binding WebcamFeed}"
-                   RenderOptions.BitmapScalingMode="HighQuality">
+                           RenderOptions.BitmapScalingMode="HighQuality">
                         <Image.Style>
                             <Style TargetType="Image">
                                 <Style.Triggers>
@@ -47,10 +47,10 @@
                 </Viewbox>
 
                 <TextBlock Text="Câmera indisponível"
-                   VerticalAlignment="Center"
-                   HorizontalAlignment="Center"
-                   Foreground="Gray"
-                   FontSize="16">
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Center"
+                           Foreground="Gray"
+                           FontSize="16">
                     <TextBlock.Style>
                         <Style TargetType="TextBlock">
                             <Setter Property="Visibility" Value="Collapsed"/>
@@ -82,7 +82,34 @@
                 Cursor="Hand"/>
 
         <StatusBar Grid.Row="4">
-            <StatusBarItem>
+            <StatusBar.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                    </Grid>
+                </ItemsPanelTemplate>
+            </StatusBar.ItemsPanel>
+
+            <StatusBarItem Grid.Column="0">
+                <Ellipse Width="12" Height="12" Margin="5,0"
+                         ToolTip="Status da Conexão com a API">
+                    <Ellipse.Style>
+                        <Style TargetType="Ellipse">
+                            <Setter Property="Fill" Value="Red"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsApiOnline}" Value="True">
+                                    <Setter Property="Fill" Value="Green"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Ellipse.Style>
+                </Ellipse>
+            </StatusBarItem>
+
+            <StatusBarItem Grid.Column="1">
                 <TextBlock Text="{Binding StatusMessage}"/>
             </StatusBarItem>
         </StatusBar>

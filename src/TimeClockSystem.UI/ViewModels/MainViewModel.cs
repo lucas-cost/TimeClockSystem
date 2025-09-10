@@ -8,6 +8,7 @@ using TimeClockSystem.Application.DTOs;
 using TimeClockSystem.Application.Interfaces;
 using TimeClockSystem.Application.UseCases.RegisterPoint;
 using TimeClockSystem.Core.Enums;
+using TimeClockSystem.Core.Interfaces;
 
 namespace TimeClockSystem.UI.ViewModels
 {
@@ -15,6 +16,7 @@ namespace TimeClockSystem.UI.ViewModels
     {
         private readonly IMediator _mediator;
         private readonly IWebcamService _webcamService;
+        private readonly IApiHealthCheckService _apiHealthCheckService;
 
         [ObservableProperty]
         private string _employeeId = string.Empty;
@@ -28,13 +30,21 @@ namespace TimeClockSystem.UI.ViewModels
         [ObservableProperty]
         private bool _isWebcamAvailable;
 
-        public MainViewModel(IMediator mediator, IWebcamService webcamService)
+        [ObservableProperty]
+        private bool _isApiOnline;
+
+        public MainViewModel(IMediator mediator, IWebcamService webcamService, IApiHealthCheckService apiHealthCheckService)
         {
             _mediator = mediator;
             _webcamService = webcamService;
+            _apiHealthCheckService = apiHealthCheckService;
 
             _webcamService.FrameReady += OnFrameReady;
-                        try
+            _apiHealthCheckService.ConnectionStatusChanged += OnConnectionStatusChanged;
+
+            _apiHealthCheckService.StartMonitoring();
+
+            try
             {
                 _webcamService.Start();
                 IsWebcamAvailable = true;
@@ -66,6 +76,11 @@ namespace TimeClockSystem.UI.ViewModels
                     WebcamFeed = bitmapImage;
                 }
             });
+        }
+
+        private void OnConnectionStatusChanged(bool isOnline)
+        {
+            System.Windows.Application.Current.Dispatcher.Invoke(() => IsApiOnline = isOnline);
         }
 
         [RelayCommand(CanExecute = nameof(IsWebcamAvailable))]
@@ -114,8 +129,13 @@ namespace TimeClockSystem.UI.ViewModels
 
         public void Dispose()
         {
+            // Remove a inscrição dos eventos para evitar vazamentos de memória
             _webcamService.FrameReady -= OnFrameReady;
+            _apiHealthCheckService.ConnectionStatusChanged -= OnConnectionStatusChanged;
+
+            // Para os serviços
             _webcamService.Stop();
+            _apiHealthCheckService.StopMonitoring();
         }
     }
 }

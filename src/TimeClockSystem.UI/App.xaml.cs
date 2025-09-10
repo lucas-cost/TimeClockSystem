@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Polly;
 using System.Diagnostics;
 using System.IO;
@@ -67,6 +68,11 @@ namespace TimeClockSystem.UI
                 IWebcamFactory factory = provider.GetRequiredService<IWebcamFactory>();
                 IVideoCaptureWrapper? captureDevice = factory.CreateVideoCapture();
                 return new WebcamService(captureDevice);
+            });
+            services.AddHttpClient<IApiHealthCheckService, ApiHealthCheckService>((serviceProvider, client) =>
+            {
+                var apiSettings = serviceProvider.GetRequiredService<IOptions<ApiSettings>>().Value;
+                client.BaseAddress = new Uri(apiSettings.BaseUrl);
             });
 
             IAsyncPolicy<HttpResponseMessage> retryPolicy = GetRetryPolicy();
