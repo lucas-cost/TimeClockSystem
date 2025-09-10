@@ -87,8 +87,8 @@ namespace TimeClockSystem.Infrastructure.Hardware
                 Scalar meanBrightness = Cv2.Mean(grayImage);
 
                 // Define os limites. Estes valores podem ser ajustados.
-                const double minBrightness = 20.0;
-                const double maxBrightness = 100.0;
+                const double minBrightness = 25.0;
+                const double maxBrightness = 150.0;
 
                 if (meanBrightness.Val0 < minBrightness)
                     throw new ImageQualityException("A imagem está muito escura. Por favor, melhore a iluminação.");
