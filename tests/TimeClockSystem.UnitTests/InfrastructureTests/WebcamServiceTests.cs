@@ -1,5 +1,7 @@
 ﻿using Moq;
 using OpenCvSharp;
+using System.Reflection;
+using TimeClockSystem.Core.Exceptions;
 using TimeClockSystem.Infrastructure.Hardware;
 using TimeClockSystem.Infrastructure.Hardware.Abstractions;
 
@@ -108,10 +110,9 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
             _mockVideoCapture.Setup(v => v.IsOpened()).Returns(true);
             _webcamService = new WebcamService(_mockVideoCapture.Object);
 
-            // Primeira chamada
             _webcamService.Start();
 
-            // Act - Segunda chamada
+            // Act
             Assert.DoesNotThrow(() => _webcamService.Start());
 
             // Cleanup
@@ -130,7 +131,7 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
 
             // Act
             _webcamService.Start();
-            await Task.Delay(100); // Aguarda um loop
+            await Task.Delay(100); 
             _webcamService.Stop();
 
             // Assert
@@ -159,10 +160,9 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
 
             // Act
             _webcamService.Stop();
-            await Task.Delay(100); // Aguarda para garantir que parou
+            await Task.Delay(100);
 
             // Assert
-            // Se não houve exception, o stop funcionou
             Assert.Pass();
         }
 
@@ -195,14 +195,16 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
             // Arrange
             _mockVideoCapture.Setup(v => v.IsOpened()).Returns(true);
 
-            // Simula uma captura bem-sucedida criando um frame válido
             _mockVideoCapture.Setup(v => v.Read(It.IsAny<Mat>()))
                 .Callback<Mat>((frame) =>
                 {
-                    // Cria um frame válido (100x100 pixels) para simular captura bem-sucedida
                     frame.Create(100, 100, MatType.CV_8UC3);
-                    // Preenche com algum conteúdo (cor preta)
-                    frame.SetTo(new Scalar(0, 0, 0));
+
+                    frame.RowRange(0, 50).SetTo(new Scalar(50, 50, 50));   
+                    frame.RowRange(50, 100).SetTo(new Scalar(70, 70, 70)); 
+
+                    Cv2.Line(frame, new Point(0, 0), new Point(100, 100), new Scalar(255, 255, 255), 2);
+                    Cv2.Line(frame, new Point(0, 100), new Point(100, 0), new Scalar(255, 255, 255), 2);
                 });
 
             _webcamService = new WebcamService(_mockVideoCapture.Object);
@@ -217,7 +219,6 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
             Assert.That(result, Does.Contain(".jpg"));
             Assert.That(result, Does.StartWith(Path.GetTempPath()));
 
-            // Verifica se o arquivo foi realmente criado
             Assert.IsTrue(File.Exists(result), "Arquivo deveria ter sido criado");
 
             // Cleanup
@@ -231,12 +232,10 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
             // Arrange
             _mockVideoCapture.Setup(v => v.IsOpened()).Returns(true);
 
-            // Configura o mock para preencher o frame com dados válidos
             _mockVideoCapture.Setup(v => v.Read(It.IsAny<Mat>()))
                 .Callback<Mat>((frame) =>
                 {
-                    // Cria um frame válido para simular captura bem-sucedida
-                    using var sampleFrame = new Mat(100, 100, MatType.CV_8UC3, new Scalar(255, 0, 0));
+                    using Mat sampleFrame = new Mat(100, 100, MatType.CV_8UC3, new Scalar(255, 0, 0));
                     sampleFrame.CopyTo(frame);
                 });
 
@@ -252,9 +251,9 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
 
             // Act
             _webcamService.Start();
-            await Task.Delay(150); // Aguarda um pouco mais para garantir o processamento
+            await Task.Delay(150);
             _webcamService.Stop();
-            await Task.Delay(50); // Aguarda finalização
+            await Task.Delay(50); 
 
             // Assert
             Assert.IsTrue(eventInvoked, "O evento FrameReady deveria ter sido invocado");
@@ -283,14 +282,13 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
             _mockVideoCapture.Setup(v => v.IsOpened()).Returns(true);
             _webcamService = new WebcamService(_mockVideoCapture.Object);
 
-            // Act & Assert - múltiplas chamadas de Dispose não devem lançar exceção
+            // Act & Assert
             Assert.DoesNotThrow(() =>
             {
                 _webcamService.Dispose();
-                _webcamService.Dispose(); // Segunda chamada
+                _webcamService.Dispose(); 
             });
 
-            // Verifica que Dispose foi chamado pelo menos uma vez
             _mockVideoCapture.Verify(v => v.Dispose(), Times.AtLeastOnce);
         }
 
@@ -308,7 +306,7 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
             _webcamService.Stop();
             await Task.Delay(50);
 
-            // Assert - Se não houve exception, o cancelamento foi graceful
+            // Assert 
             Assert.Pass();
         }
 
@@ -318,12 +316,9 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
             // Arrange
             _mockVideoCapture.Setup(v => v.IsOpened()).Returns(true);
 
-            // Simula frame vazio configurando o Mat para estar vazio após a leitura
-            // Precisamos mockar o comportamento interno do Read
             _mockVideoCapture.Setup(v => v.Read(It.IsAny<Mat>()))
                 .Callback<Mat>((frame) =>
                 {
-                    // Simula um frame vazio
                     frame.Create(0, 0, MatType.CV_8UC3);
                 });
 
@@ -340,11 +335,9 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
             // Arrange
             _mockVideoCapture.Setup(v => v.IsOpened()).Returns(true);
 
-            // Simula falha na captura (frame vazio)
             _mockVideoCapture.Setup(v => v.Read(It.IsAny<Mat>()))
                 .Callback<Mat>((frame) =>
                 {
-                    // Cria um frame vazio (0x0)
                     frame.Create(0, 0, MatType.CV_8UC3);
                 });
 
@@ -353,6 +346,83 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
             // Act & Assert
             Assert.Throws<InvalidOperationException>(() =>
                 _webcamService.CaptureAndSaveImage("123"));
+        }
+        [Test]
+        public void ValidateImageQuality_WhenImageTooDark_ThrowsImageQualityException()
+        {
+            // Arrange
+            _mockVideoCapture.Setup(v => v.IsOpened()).Returns(true);
+            _webcamService = new WebcamService(_mockVideoCapture.Object);
+
+            using Mat darkImage = new Mat(100, 100, MatType.CV_8UC3, new Scalar(10, 10, 10)); 
+
+            // Act & Assert
+            TargetInvocationException ex = Assert.Throws<TargetInvocationException>(() =>
+                _webcamService.GetType()
+                    .GetMethod("ValidateImageQuality", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+                    .Invoke(_webcamService, new object[] { darkImage }));
+
+            Assert.IsInstanceOf<ImageQualityException>(ex.InnerException);
+            Assert.That(ex.InnerException!.Message, Does.Contain("muito escura"));
+        }
+
+        [Test]
+        public void ValidateImageQuality_WhenImageTooBright_ThrowsImageQualityException()
+        {
+            // Arrange
+            _mockVideoCapture.Setup(v => v.IsOpened()).Returns(true);
+            _webcamService = new WebcamService(_mockVideoCapture.Object);
+
+            using Mat brightImage = new Mat(100, 100, MatType.CV_8UC3, new Scalar(200, 200, 200));
+
+            // Act & Assert
+            TargetInvocationException ex = Assert.Throws<TargetInvocationException>(() =>
+                _webcamService.GetType()
+                    .GetMethod("ValidateImageQuality", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+                    .Invoke(_webcamService, new object[] { brightImage }));
+
+            Assert.IsInstanceOf<ImageQualityException>(ex.InnerException);
+            Assert.That(ex.InnerException!.Message, Does.Contain("muito clara"));
+        }
+
+        [Test]
+        public void ValidateImageQuality_WhenImageBlurred_ThrowsImageQualityException()
+        {
+            // Arrange
+            _mockVideoCapture.Setup(v => v.IsOpened()).Returns(true);
+            _webcamService = new WebcamService(_mockVideoCapture.Object);
+
+            using Mat blurredImage = new Mat(100, 100, MatType.CV_8UC3, new Scalar(60, 60, 60));
+
+            // Act & Assert
+            TargetInvocationException ex = Assert.Throws<TargetInvocationException>(() =>
+                _webcamService.GetType()
+                    .GetMethod("ValidateImageQuality", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+                    .Invoke(_webcamService, new object[] { blurredImage }));
+
+            Assert.IsInstanceOf<ImageQualityException>(ex.InnerException);
+            Assert.That(ex.InnerException!.Message, Does.Contain("sem foco"));
+        }
+
+        [Test]
+        public void ValidateImageQuality_WhenImageHasGoodQuality_DoesNotThrowException()
+        {
+            // Arrange
+            _mockVideoCapture.Setup(v => v.IsOpened()).Returns(true);
+            _webcamService = new WebcamService(_mockVideoCapture.Object);
+
+            using Mat goodImage = new Mat(100, 100, MatType.CV_8UC3, new Scalar(60, 60, 60));
+
+            goodImage.Rectangle(new Rect(20, 20, 60, 60), new Scalar(0, 0, 0), -1); 
+            goodImage.Rectangle(new Rect(25, 25, 50, 50), new Scalar(255, 255, 255), -1); 
+
+            Cv2.Circle(goodImage, new Point(50, 50), 20, new Scalar(0, 0, 0), 2);
+
+            // Act & Assert
+            Assert.DoesNotThrow(() =>
+                _webcamService.GetType()
+                    .GetMethod("ValidateImageQuality", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+                    .Invoke(_webcamService, new object[] { goodImage }));
         }
     }
 }
