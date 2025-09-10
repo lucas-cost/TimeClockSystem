@@ -55,6 +55,11 @@ namespace TimeClockSystem.Application.UseCases.RegisterPoint
                 
                 return new RegisterPointResult { Success = true, CreatedRecordType = record.Type };
             }
+            catch (ImageQualityException ex)
+            {
+                Console.WriteLine($"Falha na qualidade da imagem: {ex.Message}");
+                return new RegisterPointResult { Success = false, ErrorMessage = ex.Message };
+            }
             catch (BusinessRuleException ex)
             {
                 Console.WriteLine($"Falha na regra de negócio: {ex.Message}");
