@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Castle.Core.Logging;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Moq;
 using TimeClockSystem.BackgroundServices;
 using TimeClockSystem.Core.Entities;
@@ -10,12 +12,13 @@ namespace TimeClockSystem.UnitTests.BackgroundServicesTests
     [TestFixture]
     public class SyncWorkerTests
     {
-        private CancellationTokenSource _cancellationTokenSource;
         private Mock<IServiceProvider> _mockServiceProvider;
         private Mock<IServiceScope> _mockServiceScope;
         private Mock<IServiceScopeFactory> _mockServiceScopeFactory;
         private Mock<ITimeClockRepository> _mockRepository;
         private Mock<IApiClient> _mockApiClient;
+        private Mock<ILogger<SyncWorker>> _mockLogger;
+        private CancellationTokenSource _cancellationTokenSource;
         private SyncWorker _syncWorker;
 
         private readonly Guid _recordId1 = Guid.NewGuid();
@@ -30,6 +33,7 @@ namespace TimeClockSystem.UnitTests.BackgroundServicesTests
             _mockServiceScopeFactory = new Mock<IServiceScopeFactory>();
             _mockRepository = new Mock<ITimeClockRepository>();
             _mockApiClient = new Mock<IApiClient>();
+            _mockLogger = new Mock<ILogger<SyncWorker>>();
             _cancellationTokenSource = new CancellationTokenSource();
 
             _mockServiceScopeFactory.Setup(x => x.CreateScope())
@@ -47,7 +51,7 @@ namespace TimeClockSystem.UnitTests.BackgroundServicesTests
             _mockServiceProvider.Setup(x => x.GetService(typeof(IApiClient)))
                 .Returns(_mockApiClient.Object);
 
-            _syncWorker = new SyncWorker(_mockServiceProvider.Object);
+            _syncWorker = new SyncWorker(_mockServiceProvider.Object, _mockLogger.Object);
         }
 
         [TearDown]

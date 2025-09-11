@@ -1,4 +1,5 @@
-﻿using Moq;
+﻿using Microsoft.Extensions.Logging;
+using Moq;
 using TimeClockSystem.Core.Entities;
 using TimeClockSystem.Core.Enums;
 using TimeClockSystem.Core.Exceptions;
@@ -12,12 +13,14 @@ namespace TimeClockSystem.UnitTests.CoreTests
     {
         private Mock<ITimeClockRepository> _mockRepository;
         private TimeClockService _timeClockService;
+        private Mock<ILogger<TimeClockService>> _mockLogger;
 
         [SetUp]
         public void Setup()
         {
             _mockRepository = new Mock<ITimeClockRepository>();
-            _timeClockService = new TimeClockService(_mockRepository.Object);
+            _mockLogger = new Mock<ILogger<TimeClockService>>();
+            _timeClockService = new TimeClockService(_mockRepository.Object, _mockLogger.Object);
         }
 
         [Test]

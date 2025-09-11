@@ -1,4 +1,5 @@
-﻿using Moq;
+﻿using Microsoft.Extensions.Logging;
+using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,6 +22,7 @@ namespace TimeClockSystem.UnitTests.ApplicationTests
         private Mock<IApiClient> _mockApiClient;
         private Mock<IWebcamService> _mockWebcamService;
         private Mock<ITimeClockService> _mockTimeClockService;
+        private Mock<ILogger<RegisterPointCommandHandler>> _mockLogger;
         private RegisterPointCommandHandler _handler;
         private RegisterPointRequestDto _requestDto;
         private RegisterPointCommand _command;
@@ -32,12 +34,14 @@ namespace TimeClockSystem.UnitTests.ApplicationTests
             _mockApiClient = new Mock<IApiClient>();
             _mockWebcamService = new Mock<IWebcamService>();
             _mockTimeClockService = new Mock<ITimeClockService>();
+            _mockLogger = new Mock<ILogger<RegisterPointCommandHandler>>();
 
             _handler = new RegisterPointCommandHandler(
                 _mockRepository.Object,
                 _mockApiClient.Object,
                 _mockWebcamService.Object,
-                _mockTimeClockService.Object);
+                _mockTimeClockService.Object,
+                _mockLogger.Object);
 
             _requestDto = new RegisterPointRequestDto { EmployeeId = "123" };
             _command = new RegisterPointCommand(_requestDto);

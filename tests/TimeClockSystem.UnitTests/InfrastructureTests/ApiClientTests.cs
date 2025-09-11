@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Protected;
@@ -16,10 +17,11 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
     [TestFixture]
     public class ApiClientTests
     {
-        private Mock<HttpMessageHandler> _mockHttpMessageHandler;
-        private HttpClient _httpClient;
         private Mock<IOptions<ApiSettings>> _mockApiSettings;
         private Mock<IMapper> _mockMapper;
+        private Mock<ILogger<ApiClient>> _mockLogger;
+        private Mock<HttpMessageHandler> _mockHttpMessageHandler;
+        private HttpClient _httpClient;
         private ApiClient _apiClient;
         private ApiSettings _apiSettings;
 
@@ -28,6 +30,7 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
         {
             _mockHttpMessageHandler = new Mock<HttpMessageHandler>();
             _httpClient = new HttpClient(_mockHttpMessageHandler.Object);
+            _mockLogger = new Mock<ILogger<ApiClient>>();
 
             _apiSettings = new ApiSettings
             {
@@ -40,7 +43,7 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
 
             _mockMapper = new Mock<IMapper>();
 
-            _apiClient = new ApiClient(_httpClient, _mockApiSettings.Object, _mockMapper.Object);
+            _apiClient = new ApiClient(_httpClient, _mockApiSettings.Object, _mockMapper.Object, _mockLogger.Object);
         }
 
         [TearDown]

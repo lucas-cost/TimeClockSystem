@@ -1,4 +1,5 @@
-﻿using Moq;
+﻿using Microsoft.Extensions.Logging;
+using Moq;
 using OpenCvSharp;
 using System.Reflection;
 using TimeClockSystem.Core.Exceptions;
@@ -11,6 +12,7 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
     public class WebcamServiceTests
     {
         private Mock<IVideoCaptureWrapper> _mockVideoCapture;
+        private Mock<ILogger<WebcamService>> _mockLogger;
         private WebcamService _webcamService;
         private CancellationTokenSource _cancellationTokenSource;
 
@@ -18,6 +20,7 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
         public void Setup()
         {
             _mockVideoCapture = new Mock<IVideoCaptureWrapper>();
+            _mockLogger = new Mock<ILogger<WebcamService>>();
             _cancellationTokenSource = new CancellationTokenSource();
         }
 
@@ -32,7 +35,7 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
         public void Constructor_WithNullCapture_SetsCaptureToNull()
         {
             // Arrange & Act
-            _webcamService = new WebcamService(null);
+            _webcamService = new WebcamService(null, _mockLogger.Object);
 
             // Assert
             Assert.IsFalse(_webcamService.IsWebcamAvailable());
@@ -45,7 +48,7 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
             _mockVideoCapture.Setup(v => v.IsOpened()).Returns(true);
 
             // Act
-            _webcamService = new WebcamService(_mockVideoCapture.Object);
+            _webcamService = new WebcamService(_mockVideoCapture.Object, _mockLogger.Object);
 
             // Assert
             Assert.IsTrue(_webcamService.IsWebcamAvailable());
@@ -55,7 +58,7 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
         public void IsWebcamAvailable_WhenCaptureIsNull_ReturnsFalse()
         {
             // Arrange
-            _webcamService = new WebcamService(null);
+            _webcamService = new WebcamService(null, _mockLogger.Object);
 
             // Act
             bool result = _webcamService.IsWebcamAvailable();
@@ -69,7 +72,7 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
         {
             // Arrange
             _mockVideoCapture.Setup(v => v.IsOpened()).Returns(false);
-            _webcamService = new WebcamService(_mockVideoCapture.Object);
+            _webcamService = new WebcamService(_mockVideoCapture.Object, _mockLogger.Object);
 
             // Act
             bool result = _webcamService.IsWebcamAvailable();
@@ -83,7 +86,7 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
         {
             // Arrange
             _mockVideoCapture.Setup(v => v.IsOpened()).Returns(true);
-            _webcamService = new WebcamService(_mockVideoCapture.Object);
+            _webcamService = new WebcamService(_mockVideoCapture.Object, _mockLogger.Object);
 
             // Act
             bool result = _webcamService.IsWebcamAvailable();
@@ -97,7 +100,7 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
         {
             // Arrange
             _mockVideoCapture.Setup(v => v.IsOpened()).Returns(false);
-            _webcamService = new WebcamService(_mockVideoCapture.Object);
+            _webcamService = new WebcamService(_mockVideoCapture.Object, _mockLogger.Object);
 
             // Act & Assert
             Assert.Throws<InvalidOperationException>(() => _webcamService.Start());
@@ -108,7 +111,7 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
         {
             // Arrange
             _mockVideoCapture.Setup(v => v.IsOpened()).Returns(true);
-            _webcamService = new WebcamService(_mockVideoCapture.Object);
+            _webcamService = new WebcamService(_mockVideoCapture.Object, _mockLogger.Object);
 
             _webcamService.Start();
 
@@ -124,7 +127,7 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
         {
             // Arrange
             _mockVideoCapture.Setup(v => v.IsOpened()).Returns(true);
-            _webcamService = new WebcamService(_mockVideoCapture.Object);
+            _webcamService = new WebcamService(_mockVideoCapture.Object, _mockLogger.Object);
 
             var frameReadyCalled = false;
             _webcamService.FrameReady += (buffer) => frameReadyCalled = true;
@@ -142,7 +145,7 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
         public void Stop_WhenNotRunning_DoesNothing()
         {
             // Arrange
-            _webcamService = new WebcamService(_mockVideoCapture.Object);
+            _webcamService = new WebcamService(_mockVideoCapture.Object, _mockLogger.Object);
 
             // Act & Assert
             Assert.DoesNotThrow(() => _webcamService.Stop());
@@ -153,7 +156,7 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
         {
             // Arrange
             _mockVideoCapture.Setup(v => v.IsOpened()).Returns(true);
-            _webcamService = new WebcamService(_mockVideoCapture.Object);
+            _webcamService = new WebcamService(_mockVideoCapture.Object, _mockLogger.Object);
 
             _webcamService.Start();
             await Task.Delay(50);
@@ -171,7 +174,7 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
         {
             // Arrange
             _mockVideoCapture.Setup(v => v.IsOpened()).Returns(false);
-            _webcamService = new WebcamService(_mockVideoCapture.Object);
+            _webcamService = new WebcamService(_mockVideoCapture.Object, _mockLogger.Object);
 
             // Act & Assert
             Assert.Throws<InvalidOperationException>(() =>
@@ -182,7 +185,7 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
         public void CaptureAndSaveImage_WhenCaptureIsNull_ThrowsInvalidOperationException()
         {
             // Arrange
-            _webcamService = new WebcamService(null);
+            _webcamService = new WebcamService(null, _mockLogger.Object);
 
             // Act & Assert
             Assert.Throws<InvalidOperationException>(() =>
@@ -207,7 +210,7 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
                     Cv2.Line(frame, new Point(0, 100), new Point(100, 0), new Scalar(255, 255, 255), 2);
                 });
 
-            _webcamService = new WebcamService(_mockVideoCapture.Object);
+            _webcamService = new WebcamService(_mockVideoCapture.Object, _mockLogger.Object);
             string employeeId = "12345";
 
             // Act
@@ -239,7 +242,7 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
                     sampleFrame.CopyTo(frame);
                 });
 
-            _webcamService = new WebcamService(_mockVideoCapture.Object);
+            _webcamService = new WebcamService(_mockVideoCapture.Object, _mockLogger.Object);
 
             bool eventInvoked = false;
             byte[] capturedBuffer = null!;
@@ -266,7 +269,7 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
         {
             // Arrange
             _mockVideoCapture.Setup(v => v.IsOpened()).Returns(true);
-            _webcamService = new WebcamService(_mockVideoCapture.Object);
+            _webcamService = new WebcamService(_mockVideoCapture.Object, _mockLogger.Object);
 
             // Act
             _webcamService.Dispose();
@@ -280,7 +283,7 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
         {
             // Arrange
             _mockVideoCapture.Setup(v => v.IsOpened()).Returns(true);
-            _webcamService = new WebcamService(_mockVideoCapture.Object);
+            _webcamService = new WebcamService(_mockVideoCapture.Object, _mockLogger.Object);
 
             // Act & Assert
             Assert.DoesNotThrow(() =>
@@ -298,7 +301,7 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
         {
             // Arrange
             _mockVideoCapture.Setup(v => v.IsOpened()).Returns(true);
-            _webcamService = new WebcamService(_mockVideoCapture.Object);
+            _webcamService = new WebcamService(_mockVideoCapture.Object, _mockLogger.Object);
 
             // Act
             _webcamService.Start();
@@ -322,7 +325,7 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
                     frame.Create(0, 0, MatType.CV_8UC3);
                 });
 
-            _webcamService = new WebcamService(_mockVideoCapture.Object);
+            _webcamService = new WebcamService(_mockVideoCapture.Object, _mockLogger.Object);
 
             // Act & Assert
             Assert.Throws<InvalidOperationException>(() =>
@@ -341,7 +344,7 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
                     frame.Create(0, 0, MatType.CV_8UC3);
                 });
 
-            _webcamService = new WebcamService(_mockVideoCapture.Object);
+            _webcamService = new WebcamService(_mockVideoCapture.Object, _mockLogger.Object);
 
             // Act & Assert
             Assert.Throws<InvalidOperationException>(() =>
@@ -352,7 +355,7 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
         {
             // Arrange
             _mockVideoCapture.Setup(v => v.IsOpened()).Returns(true);
-            _webcamService = new WebcamService(_mockVideoCapture.Object);
+            _webcamService = new WebcamService(_mockVideoCapture.Object, _mockLogger.Object);
 
             using Mat darkImage = new Mat(100, 100, MatType.CV_8UC3, new Scalar(10, 10, 10)); 
 
@@ -371,7 +374,7 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
         {
             // Arrange
             _mockVideoCapture.Setup(v => v.IsOpened()).Returns(true);
-            _webcamService = new WebcamService(_mockVideoCapture.Object);
+            _webcamService = new WebcamService(_mockVideoCapture.Object, _mockLogger.Object);
 
             using Mat brightImage = new Mat(100, 100, MatType.CV_8UC3, new Scalar(200, 200, 200));
 
@@ -390,7 +393,7 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
         {
             // Arrange
             _mockVideoCapture.Setup(v => v.IsOpened()).Returns(true);
-            _webcamService = new WebcamService(_mockVideoCapture.Object);
+            _webcamService = new WebcamService(_mockVideoCapture.Object, _mockLogger.Object);
 
             using Mat blurredImage = new Mat(100, 100, MatType.CV_8UC3, new Scalar(60, 60, 60));
 
@@ -409,7 +412,7 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
         {
             // Arrange
             _mockVideoCapture.Setup(v => v.IsOpened()).Returns(true);
-            _webcamService = new WebcamService(_mockVideoCapture.Object);
+            _webcamService = new WebcamService(_mockVideoCapture.Object, _mockLogger.Object);
 
             using Mat goodImage = new Mat(100, 100, MatType.CV_8UC3, new Scalar(60, 60, 60));
 
