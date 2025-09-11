@@ -5,8 +5,113 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TimeClockSystem.UI"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="Registro de Ponto Eletrônico" Height="550" Width="450"
+        WindowStartupLocation="CenterScreen"
+        MinWidth="350" MinHeight="500">
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
+        <TextBlock Grid.Row="0"
+                   Text="Registro de Ponto"
+                   FontSize="24" FontWeight="SemiBold"
+                   HorizontalAlignment="Center"
+                   Margin="20"/>
+
+        <Border Grid.Row="1"
+                Margin="20,0,20,20"
+                BorderBrush="Gray"
+                BorderThickness="1"
+                CornerRadius="5"
+                Background="#F0F0F0">
+
+            <Grid>
+                <Viewbox Stretch="Uniform">
+                    <Image Source="{Binding WebcamFeed}"
+                           RenderOptions.BitmapScalingMode="HighQuality">
+                        <Image.Style>
+                            <Style TargetType="Image">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding WebcamFeed}" Value="{x:Null}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Image.Style>
+                    </Image>
+                </Viewbox>
+
+                <TextBlock Text="Câmera indisponível"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Center"
+                           Foreground="Gray"
+                           FontSize="16">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding WebcamFeed}" Value="{x:Null}">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </Grid>
+        </Border>
+
+        <StackPanel Grid.Row="2" Margin="20,0">
+            <TextBlock Text="Matrícula do Funcionário:"
+                       Margin="0,0,0,5"/>
+            <TextBox FontSize="18"
+                     Text="{Binding EmployeeId, UpdateSourceTrigger=PropertyChanged}"
+                     Padding="5"/>
+        </StackPanel>
+
+        <Button Grid.Row="3"
+                Content="Bater Ponto"
+                FontSize="20" FontWeight="Bold"
+                Command="{Binding RegisterPointCommand}"
+                Margin="20"
+                Padding="10"
+                Cursor="Hand"/>
+
+        <StatusBar Grid.Row="4">
+            <StatusBar.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                    </Grid>
+                </ItemsPanelTemplate>
+            </StatusBar.ItemsPanel>
+
+            <StatusBarItem Grid.Column="0">
+                <Ellipse Width="12" Height="12" Margin="5,0"
+                         ToolTip="Status da Conexão com a API">
+                    <Ellipse.Style>
+                        <Style TargetType="Ellipse">
+                            <Setter Property="Fill" Value="Red"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsApiOnline}" Value="True">
+                                    <Setter Property="Fill" Value="Green"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Ellipse.Style>
+                </Ellipse>
+            </StatusBarItem>
+
+            <StatusBarItem Grid.Column="1">
+                <TextBlock Text="{Binding StatusMessage}"/>
+            </StatusBarItem>
+        </StatusBar>
     </Grid>
 </Window>
