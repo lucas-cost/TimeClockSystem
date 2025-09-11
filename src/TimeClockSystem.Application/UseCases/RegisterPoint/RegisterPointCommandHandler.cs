@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Microsoft.Extensions.Logging;
 using TimeClockSystem.Application.Interfaces;
 using TimeClockSystem.Core.Entities;
 using TimeClockSystem.Core.Enums;
@@ -14,17 +15,20 @@ namespace TimeClockSystem.Application.UseCases.RegisterPoint
         private readonly IApiClient _apiClient;
         private readonly IWebcamService _webcamService;
         private readonly ITimeClockService _timeClockService;
+        private readonly ILogger<RegisterPointCommandHandler> _logger;
 
         public RegisterPointCommandHandler(
             ITimeClockRepository repository,
             IApiClient apiClient,
             IWebcamService webcamService,
-            ITimeClockService timeClockService)
+            ITimeClockService timeClockService,
+            ILogger<RegisterPointCommandHandler> logger)
         {
             _repository = repository;
             _apiClient = apiClient;
             _webcamService = webcamService;
             _timeClockService = timeClockService; 
+            _logger = logger;
         }
 
         public async Task<RegisterPointResult> Handle(RegisterPointCommand request, CancellationToken cancellationToken)
@@ -57,17 +61,17 @@ namespace TimeClockSystem.Application.UseCases.RegisterPoint
             }
             catch (ImageQualityException ex)
             {
-                Console.WriteLine($"Falha na qualidade da imagem: {ex.Message}");
+                _logger.LogWarning("Falha na qualidade da imagem para {EmployeeId}: {Message}", request.PointData.EmployeeId, ex.Message);
                 return new RegisterPointResult { Success = false, ErrorMessage = ex.Message };
             }
             catch (BusinessRuleException ex)
             {
-                Console.WriteLine($"Falha na regra de negócio: {ex.Message}");
+                _logger.LogWarning("Falha na regra de negócio ao registrar ponto para {EmployeeId}: {Message}", request.PointData.EmployeeId, ex.Message);
                 return new RegisterPointResult { Success = false, ErrorMessage = ex.Message };
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Falha grave ao registrar ponto: {ex.Message}");
+                _logger.LogError(ex, "Falha grave ao registrar ponto para o funcionário {EmployeeId}", request.PointData.EmployeeId);
                 return new RegisterPointResult { Success = false, ErrorMessage = "Ocorreu uma falha inesperada ao registrar o ponto." };
             }
         }

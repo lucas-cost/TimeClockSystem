@@ -1,5 +1,11 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using TimeClockSystem.Core.Entities;
 using TimeClockSystem.Core.Enums;
 using TimeClockSystem.Core.Interfaces;
 
@@ -8,43 +14,67 @@ namespace TimeClockSystem.BackgroundServices
     public class SyncWorker : BackgroundService
     {
         private readonly IServiceProvider _serviceProvider;
+        private readonly ILogger<SyncWorker> _logger;
 
-        public SyncWorker(IServiceProvider serviceProvider)
+        public SyncWorker(IServiceProvider serviceProvider, ILogger<SyncWorker> logger)
         {
             _serviceProvider = serviceProvider;
+            _logger = logger;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            _logger.LogInformation("SyncWorker iniciado.");
+
             while (!stoppingToken.IsCancellationRequested)
             {
+                _logger.LogInformation("Iniciando ciclo de sincronização...");
+
                 try
                 {
-                    // Cria um escopo para resolver serviços com tempo de vida 'scoped'
-                    using (var scope = _serviceProvider.CreateScope())
+                    using (IServiceScope scope = _serviceProvider.CreateScope())
                     {
-                        var repository = scope.ServiceProvider.GetRequiredService<ITimeClockRepository>();
-                        var apiClient = scope.ServiceProvider.GetRequiredService<IApiClient>();
+                        ITimeClockRepository repository = scope.ServiceProvider.GetRequiredService<ITimeClockRepository>();
+                        IApiClient apiClient = scope.ServiceProvider.GetRequiredService<IApiClient>();
 
-                        var pendingRecords = await repository.GetPendingSyncRecordsAsync();
-                        foreach (var record in pendingRecords)
+                        IEnumerable<TimeClockRecord> pendingRecords = await repository.GetPendingSyncRecordsAsync();
+                        int pendingCount = pendingRecords.Count();
+
+                        if (pendingCount > 0)
                         {
-                            bool success = await apiClient.RegisterPointAsync(record);
-                            if (success)
+                            _logger.LogInformation("Encontrados {PendingCount} registros pendentes para sincronização.", pendingCount);
+
+                            foreach (TimeClockRecord record in pendingRecords)
                             {
-                                await repository.UpdateStatusAsync(record.Id, SyncStatus.Synced);
+                                bool success = await apiClient.RegisterPointAsync(record);
+                                if (success)
+                                {
+                                    await repository.UpdateStatusAsync(record.Id, SyncStatus.Synced);
+                                    _logger.LogInformation("Registro {RecordId} do funcionário {EmployeeId} sincronizado com sucesso.", record.Id, record.EmployeeId);
+                                }
+                                else
+                                {
+                                    // Log de aviso se a sincronização de um registro específico falhar
+                                    _logger.LogWarning("Falha ao sincronizar o registro {RecordId} do funcionário {EmployeeId}.", record.Id, record.EmployeeId);
+                                }
                             }
+                        }
+                        else
+                        {
+                            _logger.LogInformation("Nenhum registro pendente encontrado.");
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Erro no worker de sincronização: {ex.Message}");
+                    _logger.LogError(ex, "Ocorreu um erro inesperado durante o ciclo de sincronização.");
                 }
 
-                // Aguarda 1 minuto antes da próxima tentativa
+                _logger.LogInformation("Ciclo de sincronização concluído. Aguardando próximo ciclo.");
                 await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
             }
+
+            _logger.LogInformation("SyncWorker finalizado.");
         }
     }
 }

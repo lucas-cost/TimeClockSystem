@@ -2,8 +2,11 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Polly;
+using Serilog;
+using Serilog.Events;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
@@ -31,7 +34,21 @@ namespace TimeClockSystem.UI
 
         public App()
         {
+            // 1. Configura o Serilog antes de construir o Host
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Debug() 
+                .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+                .Enrich.FromLogContext()
+                .WriteTo.Debug()
+                .WriteTo.File(
+                    path: Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "TimeClockSystem", "Logs", "log-.txt"),
+                    rollingInterval: RollingInterval.Day,
+                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+                .CreateLogger();
+
+
             _host = Host.CreateDefaultBuilder()
+                .UseSerilog()
                 .ConfigureServices((context, services) =>
                 {
                     ConfigureServices(services);
@@ -66,8 +83,10 @@ namespace TimeClockSystem.UI
             services.AddSingleton<IWebcamService>(provider =>
             {
                 IWebcamFactory factory = provider.GetRequiredService<IWebcamFactory>();
+                ILogger<WebcamService> logger = provider.GetRequiredService<ILogger<WebcamService>>();
                 IVideoCaptureWrapper? captureDevice = factory.CreateVideoCapture();
-                return new WebcamService(captureDevice);
+
+                return new WebcamService(captureDevice, logger);
             });
             services.AddHttpClient<IApiHealthCheckService, ApiHealthCheckService>((serviceProvider, client) =>
             {
@@ -124,17 +143,17 @@ namespace TimeClockSystem.UI
 
         private static void OnBreak(DelegateResult<HttpResponseMessage> result, TimeSpan timeSpan)
         {
-            Debug.WriteLine($"CIRCUIT BREAKER: Circuito aberto por 30 segundos. Motivo: {result.Exception?.Message ?? result.Result?.ReasonPhrase}");
+            Log.Warning($"CIRCUIT BREAKER: Circuito aberto por 30 segundos. Motivo: {result.Exception?.Message ?? result.Result?.ReasonPhrase}");
         }
 
         private static void OnReset()
         {
-            Debug.WriteLine("CIRCUIT BREAKER: Circuito fechado. As chamadas voltam ao normal.");
+            Log.Information("CIRCUIT BREAKER: Circuito fechado. As chamadas voltam ao normal.");
         }
 
         private static void OnHalfOpen()
         {
-            Debug.WriteLine("CIRCUIT BREAKER: Circuito meio-aberto. A próxima chamada será um teste.");
+            Log.Information("CIRCUIT BREAKER: Circuito meio-aberto. A próxima chamada será um teste.");
         }
 
         protected override async void OnStartup(StartupEventArgs e)

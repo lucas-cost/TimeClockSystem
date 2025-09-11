@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System.Net.Http.Headers;
@@ -16,12 +17,14 @@ namespace TimeClockSystem.Infrastructure.Api
         private readonly HttpClient _httpClient;
         private readonly ApiSettings _apiSettings;
         private readonly IMapper _mapper;
+        private readonly ILogger<ApiClient> _logger;
 
-        public ApiClient(HttpClient httpClient, IOptions<ApiSettings> apiSettings, IMapper mapper)
+        public ApiClient(HttpClient httpClient, IOptions<ApiSettings> apiSettings, IMapper mapper, ILogger<ApiClient> logger)
         {
             _httpClient = httpClient;
             _mapper = mapper;
             _apiSettings = apiSettings.Value;
+            _logger = logger;
 
             _httpClient.BaseAddress = new Uri(_apiSettings.BaseUrl);
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _apiSettings.AuthToken);
@@ -50,7 +53,7 @@ namespace TimeClockSystem.Infrastructure.Api
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Erro ao sincronizar com a API: {ex.Message}");
+                _logger.LogError(ex, "Erro ao sincronizar ponto para o funcionário {EmployeeId}", record.EmployeeId);
                 return false;
             }
         }
