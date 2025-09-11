@@ -250,5 +250,28 @@ namespace TimeClockSystem.UnitTests.ApplicationTests
             // Assert
             Assert.AreEqual("Escritório Principal (Simulado)", capturedRecord.Location);
         }
+
+        [Test]
+        public async Task Handle_WhenImageQualityExceptionOccurs_ReturnsFailureResultWithErrorMessage()
+        {
+            // Arrange
+            string employeeId = "123";
+            string errorMessage = "A imagem está muito escura";
+            _requestDto.EmployeeId = employeeId;
+
+            _mockTimeClockService
+                .Setup(service => service.GetNextRecordTypeAsync(employeeId))
+                .ReturnsAsync(RecordType.Entry);
+
+            _mockWebcamService
+                .Setup(service => service.CaptureAndSaveImage(employeeId))
+                .Throws(new ImageQualityException(errorMessage));
+
+            // Act
+            RegisterPointResult result = await _handler.Handle(_command, CancellationToken.None);
+
+            // Assert
+            Assert.That(result.ErrorMessage, Is.EqualTo(errorMessage));
+        }
     }
 }
