@@ -1,0 +1,37 @@
+# Nome do workflow
+name: .NET Build and Test CI
+
+on:
+  push:
+    branches:
+      - 'master'
+  
+  pull_request: {}
+
+jobs:
+  build-and-test:
+    # Roda em uma máquina virtual do Windows
+    runs-on: windows-latest
+
+    steps:
+      # 1. Clona o repositório
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Configura o ambiente .NET 8
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      # 3. Restaura os pacotes NuGet
+      - name: Restore dependencies
+        run: dotnet restore
+
+      # 4. Compila a solução
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      # 5. Executa os testes unitários
+      - name: Test
+        run: dotnet test --no-build --verbosity normal --configuration Release
