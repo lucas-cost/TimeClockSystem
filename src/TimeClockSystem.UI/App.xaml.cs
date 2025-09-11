@@ -95,6 +95,7 @@ namespace TimeClockSystem.UI
                 var apiSettings = serviceProvider.GetRequiredService<IOptions<ApiSettings>>().Value;
                 client.BaseAddress = new Uri(apiSettings.BaseUrl);
             });
+
             // Adiciona o MassTransit
             services.AddMassTransit(busConfigurator =>
             {
