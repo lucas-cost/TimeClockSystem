@@ -10,11 +10,11 @@ on:
 
 jobs:
   build-and-test:
-    # Roda em uma m·quina virtual do Windows
+    # Roda em uma m√°quina virtual do Windows
     runs-on: windows-latest
 
     steps:
-      # 1. Clona o repositÛrio
+      # 1. Clona o reposit√≥rio
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -28,10 +28,10 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
 
-      # 4. Compila a soluÁ„o
+      # 4. Compila a solu√ß√£o
       - name: Build
         run: dotnet build --no-restore --configuration Release
 
-      # 5. Executa os testes unit·rios
+      # 5. Executa os testes unit√°rios
       - name: Test
         run: dotnet test --no-build --verbosity normal --configuration Release
