@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using MassTransit;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -22,6 +23,7 @@ using TimeClockSystem.Infrastructure.Data.Context;
 using TimeClockSystem.Infrastructure.Hardware;
 using TimeClockSystem.Infrastructure.Hardware.Abstractions;
 using TimeClockSystem.Infrastructure.Hardware.Factories;
+using TimeClockSystem.Infrastructure.Menssaging;
 using TimeClockSystem.Infrastructure.Repositories;
 using TimeClockSystem.UI.ViewModels;
 using WpfApplication = System.Windows.Application;
@@ -93,6 +95,22 @@ namespace TimeClockSystem.UI
                 var apiSettings = serviceProvider.GetRequiredService<IOptions<ApiSettings>>().Value;
                 client.BaseAddress = new Uri(apiSettings.BaseUrl);
             });
+            // Adiciona o MassTransit
+            services.AddMassTransit(busConfigurator =>
+            {
+                busConfigurator.UsingRabbitMq((context, cfg) =>
+                {
+                    // Conecta ao RabbitMQ rodando no Docker em localhost
+                    cfg.Host("localhost", "/", h =>
+                    {
+                        h.Username("guest");
+                        h.Password("guest");
+                    });
+
+                    // Opcional: Configurações adicionais podem ir aqui
+                });
+            });
+            services.AddSingleton<IEventPublisher, MassTransitEventPublisher>();
 
             IAsyncPolicy<HttpResponseMessage> retryPolicy = GetRetryPolicy();
             IAsyncPolicy<HttpResponseMessage> circuitBreakerPolicy = GetCircuitBreakerPolicy();

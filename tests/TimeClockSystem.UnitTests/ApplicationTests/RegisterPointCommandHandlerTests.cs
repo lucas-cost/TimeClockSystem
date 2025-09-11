@@ -23,6 +23,7 @@ namespace TimeClockSystem.UnitTests.ApplicationTests
         private Mock<IWebcamService> _mockWebcamService;
         private Mock<ITimeClockService> _mockTimeClockService;
         private Mock<ILogger<RegisterPointCommandHandler>> _mockLogger;
+        private Mock<IEventPublisher> _mockEventPublisher;
         private RegisterPointCommandHandler _handler;
         private RegisterPointRequestDto _requestDto;
         private RegisterPointCommand _command;
@@ -35,13 +36,15 @@ namespace TimeClockSystem.UnitTests.ApplicationTests
             _mockWebcamService = new Mock<IWebcamService>();
             _mockTimeClockService = new Mock<ITimeClockService>();
             _mockLogger = new Mock<ILogger<RegisterPointCommandHandler>>();
+            _mockEventPublisher = new Mock<IEventPublisher>();
 
             _handler = new RegisterPointCommandHandler(
                 _mockRepository.Object,
                 _mockApiClient.Object,
                 _mockWebcamService.Object,
                 _mockTimeClockService.Object,
-                _mockLogger.Object);
+                _mockLogger.Object,
+                _mockEventPublisher.Object);
 
             _requestDto = new RegisterPointRequestDto { EmployeeId = "123" };
             _command = new RegisterPointCommand(_requestDto);

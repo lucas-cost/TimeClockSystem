@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using TimeClockSystem.Application.Interfaces;
 using TimeClockSystem.Core.Entities;
 using TimeClockSystem.Core.Enums;
+using TimeClockSystem.Core.Events;
 using TimeClockSystem.Core.Exceptions;
 using TimeClockSystem.Core.Interfaces;
 using TimeClockSystem.Core.Services;
@@ -16,19 +17,22 @@ namespace TimeClockSystem.Application.UseCases.RegisterPoint
         private readonly IWebcamService _webcamService;
         private readonly ITimeClockService _timeClockService;
         private readonly ILogger<RegisterPointCommandHandler> _logger;
+        private readonly IEventPublisher _eventPublisher;
 
         public RegisterPointCommandHandler(
             ITimeClockRepository repository,
             IApiClient apiClient,
             IWebcamService webcamService,
             ITimeClockService timeClockService,
-            ILogger<RegisterPointCommandHandler> logger)
+            ILogger<RegisterPointCommandHandler> logger,
+            IEventPublisher eventPublisher)
         {
             _repository = repository;
             _apiClient = apiClient;
             _webcamService = webcamService;
             _timeClockService = timeClockService; 
             _logger = logger;
+            _eventPublisher = eventPublisher;
         }
 
         public async Task<RegisterPointResult> Handle(RegisterPointCommand request, CancellationToken cancellationToken)
@@ -56,7 +60,15 @@ namespace TimeClockSystem.Application.UseCases.RegisterPoint
 
                 if (synced)
                     await _repository.UpdateStatusAsync(record.Id, SyncStatus.Synced);
-                
+
+                PointRegisteredSuccessfullyEvent successEvent = new()
+                {
+                    RecordId = record.Id,
+                    EmployeeId = record.EmployeeId
+                };
+
+                await _eventPublisher.PublishEventAsync(successEvent, nameof(PointRegisteredSuccessfullyEvent), cancellationToken);
+
                 return new RegisterPointResult { Success = true, CreatedRecordType = record.Type };
             }
             catch (ImageQualityException ex)
@@ -71,6 +83,13 @@ namespace TimeClockSystem.Application.UseCases.RegisterPoint
             }
             catch (Exception ex)
             {
+                PointRegistrationFailedEvent failedEvent = new()
+                {
+                    EmployeeId = request.PointData.EmployeeId,
+                    ErrorMessage = ex.Message
+                };
+                await _eventPublisher.PublishEventAsync(failedEvent, nameof(PointRegistrationFailedEvent), cancellationToken);
+
                 _logger.LogError(ex, "Falha grave ao registrar ponto para o funcionário {EmployeeId}", request.PointData.EmployeeId);
                 return new RegisterPointResult { Success = false, ErrorMessage = "Ocorreu uma falha inesperada ao registrar o ponto." };
             }
