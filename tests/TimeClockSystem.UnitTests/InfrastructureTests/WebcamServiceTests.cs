@@ -404,7 +404,7 @@ namespace TimeClockSystem.UnitTests.InfrastructureTests
                     .Invoke(_webcamService, new object[] { blurredImage }));
 
             Assert.IsInstanceOf<ImageQualityException>(ex.InnerException);
-            Assert.That(ex.InnerException!.Message, Does.Contain("sem foco"));
+            Assert.That(ex.InnerException!.Message, Does.Contain("A imagem está (borrada). Fique parado e tente novamente."));
         }
 
         [Test]
