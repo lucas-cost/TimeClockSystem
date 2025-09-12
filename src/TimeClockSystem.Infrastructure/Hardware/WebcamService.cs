@@ -127,7 +127,7 @@ namespace TimeClockSystem.Infrastructure.Hardware
                 const double minFocus = 90.0;
 
                 if (focusMeasure < minFocus)
-                    throw new ImageQualityException("A imagem está sem foco (borrada). Por favor, fique parado e tente novamente.");
+                    throw new ImageQualityException("A imagem está (borrada). Fique parado e tente novamente.");
 
                 _logger.LogInformation("Validação de qualidade de imagem aprovada.");
             }
