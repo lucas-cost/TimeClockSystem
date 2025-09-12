@@ -65,3 +65,5 @@ o teste será considerado aprovado mesmo que os registros sejam feitos em sequênc
 ![Negar saída](https://github.com/lucas-cost/TimeClockSystem/blob/developer/docs/Images/IMG-CT-001/04-jornada-nao-comprida.png)
 
 ![Registros no banco](https://github.com/lucas-cost/TimeClockSystem/blob/developer/docs/Images/IMG-CT-001/05-registros.png)
+
+![Publicação na fila](https://github.com/lucas-cost/TimeClockSystem/blob/developer/docs/Images/IMG-CT-001/06-publish-rabbitmq.png)
