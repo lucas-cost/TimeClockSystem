@@ -56,12 +56,12 @@ o teste será considerado aprovado mesmo que os registros sejam feitos em sequênc
 - [ ] **Falhou**
 
 ### Evidências!
-![Entrada](Images/IMG-CT-001/01-entrada.png)
+![Entrada](../Images/IMG-CT-001/01-entrada.png)
 
-![Início da pausa](Images/IMG-CT-001/02-inicio-pausa.png)
+![Início da pausa](../Images/IMG-CT-001/02-inicio-pausa.png)
 
-![Fim da pausa](Images/IMG-CT-001/03-fim-pausa.png)
+![Fim da pausa](../Images/IMG-CT-001/03-fim-pausa.png)
 
-![Negar saída](Images/IMG-CT-001/04-jornada-nao-comprida.png)
+![Negar saída](../Images/IMG-CT-001/04-jornada-nao-comprida.png)
 
-![Registros no banco](Images/IMG-CT-001/05-registros.png)
+![Registros no banco](../Images/IMG-CT-001/05-registros.png)
