@@ -1,0 +1,108 @@
+{
+	"info": {
+		"_postman_id": "c1e3b47b-163a-490d-9bd0-c528bdd35ddf",
+		"name": "API Mock RP",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "47166060",
+		"_collection_link": "https://joint-operations-engineer-86067928-1002153.postman.co/workspace/Lucas-Costa's-Workspace~01df7c65-626c-47a9-8ee7-a272db317fe7/collection/47166060-c1e3b47b-163a-490d-9bd0-c528bdd35ddf?action=share&source=collection_link&creator=47166060"
+	},
+	"item": [
+		{
+			"name": "api/timesheet/register",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{url}}/api/timesheet/register",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"api",
+						"timesheet",
+						"register"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "Default",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/api/timesheet/register",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"api",
+								"timesheet",
+								"register"
+							]
+						}
+					},
+					"code": 200,
+					"_postman_previewlanguage": null,
+					"header": null,
+					"cookie": [],
+					"body": "{\n\n  \"id\": \"2d9c32ea-fbf6-40fe-856c-c609aa17c9f3\",\n\n  \"status\": \"registered\",\n\n  \"serverTimestamp\": \"2025-09-07T08:00:02Z\",\n\n  \"message\": \"Point registered successfully\"\n\n}"
+				}
+			]
+		},
+		{
+			"name": "New Request",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}",
+					"host": [
+						"{{url}}"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "New Request",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}",
+							"host": [
+								"{{url}}"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "",
+					"header": [],
+					"cookie": [
+						{
+							"expires": "Invalid Date",
+							"domain": "",
+							"path": ""
+						}
+					],
+					"body": ""
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "url",
+			"value": "https://dd47e754-521f-4f8a-8f7d-4dd420d99f33.mock.pstmn.io"
+		}
+	]
+}

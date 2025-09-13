@@ -51,3 +51,11 @@ docker run -d --name timeclock-rabbit -p 5672:5672 -p 15672:15672 rabbitmq:3-man
 ```
 
 ![Container Docker](https://github.com/lucas-cost/TimeClockSystem/blob/developer/docs/Images/IMG-CT-003/docker.png)
+
+### 2. Execução Manual Migrations
+```bash
+dotnet ef migrations add InitialCreate --startup-project ".\src\TimeClockSystem.UI\TimeClockSystem.UI.csproj" --project ".\src\TimeClockSystem.Infrastructure\TimeClockSystem.Infrastructure.csproj"
+```
+```bash
+dotnet ef database update --startup-project ".\src\TimeClockSystem.UI\TimeClockSystem.UI.csproj" --project ".\src\TimeClockSystem.Infrastructure\TimeClockSystem.Infrastructure.csproj"
+```
